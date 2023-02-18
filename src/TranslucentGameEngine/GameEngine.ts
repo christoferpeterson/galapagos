@@ -1,7 +1,9 @@
 import LogOverlay from "./Entities/LogOverlay";
 import UniversalBackground from "./Entities/UniversalBackground";
 import LogoScreen from "./Screens/LogoScreen";
+import { Inputs } from "./types/Inputs";
 import buildCanvas from "./Utilities/buildCanvas";
+import { Camera, Viewport } from "./View";
 
 const TARGET_FPS = 60 as const;
 const INTERVAL = 1000 / TARGET_FPS;
@@ -11,6 +13,15 @@ const unloadCallback = (event:any) => {
 	event.returnValue = "";
 	return "";
 };
+
+const defaultInputs:Inputs = {
+	mouse: { x: 0, y: 0, lmb: false, mmb:false, rmb: false },
+	keyboard: {},
+	controls: {
+		StandGround: "Shift",
+		Move: "rmb"
+	}
+}
 
 export default class GameEngine implements IGameEngine {
 	private log: GameLog;
@@ -41,7 +52,10 @@ export default class GameEngine implements IGameEngine {
 		this.state = { 
 			debug: false,
 			fps: TARGET_FPS,
-			loadScreen: (screen) => this.loadScreen(screen)
+			loadScreen: (screen) => this.loadScreen(screen),
+			inputs: defaultInputs,
+			camera: new Camera(0,0),
+			viewport: new Viewport(width, height)
 		};
 
 		this.initialize();
@@ -96,13 +110,13 @@ export default class GameEngine implements IGameEngine {
 	private mousedown(e:MouseEvent) {
 		switch(e.button) {
 			case 0:
-				this.state.screen?.leftmousedown(e);
+				this.state.inputs.mouse.lmb = true;
 				break;
 			case 1:
-				this.state.screen?.middlemousedown(e);
+				this.state.inputs.mouse.mmb = true;
 				break;
 			case 2:
-				this.state.screen?.rightmousedown(e);
+				this.state.inputs.mouse.rmb = true;
 				break;
 		}
 	}
@@ -111,30 +125,31 @@ export default class GameEngine implements IGameEngine {
 
 		switch(e.button) {
 			case 0:
-				this.state.screen?.leftmouseup(e);
+				this.state.inputs.mouse.lmb = false;
 				break;
 			case 1:
-				this.state.screen?.middlemouseup(e);
+				this.state.inputs.mouse.mmb = false;
 				break;
 			case 2:
-				this.state.screen?.rightmouseup(e);
+				this.state.inputs.mouse.rmb = false;
 				break;
 		}
 	}
 
 	private keydown(e:KeyboardEvent) {
-		this.state.screen?.keydown(e);
+		this.state.inputs.keyboard[e.key] = true;
 	}
 
 	private keyup(e:KeyboardEvent) {
-		this.state.screen?.keyup(e);
+		delete this.state.inputs.keyboard[e.key];		
 	}
 
 	private mousemove(e:MouseEvent) {
-		this.state.screen?.mousemove(e);
+		this.state.inputs.mouse.x = e.offsetX - this.state.viewport.w / 2 + this.state.camera.x;
+		this.state.inputs.mouse.y = -e.offsetY + this.state.viewport.h / 2 + this.state.camera.y;
 	}
 
 	private wheel(e:WheelEvent) {
-		this.state.screen?.wheel(e);
+		
 	}
 }
